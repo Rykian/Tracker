@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: tracker_app_production
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=postgres://tracker:${TRACKER_DATABASE_PASSWORD}@postgres:5432/tracker_production
+      - REDIS_URL=redis://redis:6379/0
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./public:/app/public
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: bundle exec rails server -b 0.0.0.0
+
+  postgres:
+    image: postgres:16
+    container_name: tracker_postgres_production
+    environment:
+      POSTGRES_DB: tracker_production
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: ${TRACKER_DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracker -d tracker_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tracker_redis_production
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
