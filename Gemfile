@@ -13,7 +13,10 @@ gem "puma", ">= 5.0"
 gem "graphql", "~> 2.0"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
+
+# JSON Web Token for authentication
+gem "jwt"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -50,4 +53,14 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # RSpec testing framework
+  gem "rspec-rails", "~> 6.0"
+  gem "factory_bot_rails", "~> 6.2"
+  gem "faker", "~> 3.0"
+end
+
+group :test do
+  # Test helpers and utilities
+  gem "shoulda-matchers", "~> 5.0"
 end

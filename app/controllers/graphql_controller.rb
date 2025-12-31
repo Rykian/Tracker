@@ -11,8 +11,7 @@ class GraphqlController < ApplicationController
     query = params[:query]
     operation_name = params[:operationName]
     context = {
-      # Query context goes here, for example:
-      # current_user: current_user,
+      current_user: current_user
     }
     result = TrackerSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
     render json: result
@@ -22,6 +21,22 @@ class GraphqlController < ApplicationController
   end
 
   private
+
+  def current_user
+    return nil unless auth_header
+
+    token = auth_header.split(' ').last
+    decoded = JsonWebToken.decode(token)
+    return nil unless decoded
+
+    User.find_by(id: decoded[:user_id])
+  rescue
+    nil
+  end
+
+  def auth_header
+    request.headers['Authorization']
+  end
 
   # Handle variables in form data, JSON body, or a blank value
   def prepare_variables(variables_param)
