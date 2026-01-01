@@ -1,6 +1,4 @@
 class TrackerController < ApplicationController
-  skip_before_action :verify_authenticity_token
-  
   # GET /announce?info_hash=...&peer_id=...&port=...&uploaded=...&downloaded=...&left=...&event=...&user_id=...
   def announce
     required_params = [:info_hash, :peer_id, :port, :uploaded, :downloaded, :left, :user_id]
@@ -10,7 +8,17 @@ class TrackerController < ApplicationController
       return render_error("Missing required parameters: #{missing_params.join(', ')}")
     end
 
-    info_hash = params[:info_hash].unpack1('H*')
+    raw_info_hash = params[:info_hash]
+
+    info_hash = if raw_info_hash.is_a?(String) && raw_info_hash.match?(/\A[0-9a-fA-F]{40}\z/)
+      raw_info_hash.downcase
+    else
+      begin
+        raw_info_hash.to_s.unpack1('H*')
+      rescue ArgumentError
+        return render_error('Invalid info_hash')
+      end
+    end
     torrent = Torrent.find_by(info_hash: info_hash)
     
     unless torrent
@@ -41,14 +49,16 @@ class TrackerController < ApplicationController
       last_announce: Time.current
     )
 
+    # Update user stats with deltas before any other action
+    if uploaded_delta > 0 || downloaded_delta > 0
+      user.update_stats!(uploaded_delta, downloaded_delta)
+    end
+
     if params[:event] == 'stopped'
       peer.destroy
+      # Update torrent stats after peer removal
+      UpdateTorrentStatsJob.perform_later(torrent.id)
     elsif peer.save
-      # Update user stats with deltas for the peer's user
-      if uploaded_delta > 0 || downloaded_delta > 0
-        user.update_stats!(uploaded_delta, downloaded_delta)
-      end
-      
       # Update torrent stats asynchronously
       UpdateTorrentStatsJob.perform_later(torrent.id)
     else
@@ -78,7 +88,17 @@ class TrackerController < ApplicationController
 
     files = {}
     info_hashes.each do |raw_hash|
-      info_hash = raw_hash.unpack1('H*')
+      # Handle both hex-encoded and binary info_hash
+      info_hash = if raw_hash.is_a?(String) && raw_hash.match?(/\A[0-9a-fA-F]{40}\z/)
+        raw_hash.downcase
+      else
+        begin
+          raw_hash.to_s.unpack1('H*')
+        rescue ArgumentError
+          next # Skip invalid hashes
+        end
+      end
+      
       torrent = Torrent.find_by(info_hash: info_hash)
       
       if torrent

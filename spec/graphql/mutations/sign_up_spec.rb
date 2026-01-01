@@ -32,7 +32,8 @@ RSpec.describe 'SignUp Mutation', type: :request do
       json = JSON.parse(response.body)
       data = json['data']['signUp']
       
-      expect(data['user']['email']).to eq('test@example.com')
+      expect(data['user']['id']).to be_present
+      expect(data['user']['email']).to be_nil # Email is private
       expect(data['token']).to be_present
       expect(data['errors']).to be_empty
     end
