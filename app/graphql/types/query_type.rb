@@ -21,33 +21,8 @@ module Types
     # Add root-level fields here.
     # They will be entry points for queries on your schema.
 
-    field :current_user, Types::UserType, null: true,
-      description: "Get current authenticated user"
-    def current_user
-      context[:current_user]
-    end
-
-    field :torrents, Types::TorrentType.connection_type, null: false do
-      description "List of torrents"
-      argument :category, Integer, required: false, description: "Filter by main category (includes subcategories)"
-      argument :exact_category, Integer, required: false, description: "Filter by exact category ID"
-    end
-    def torrents(category: nil, exact_category: nil)
-      torrents = Torrent.includes(:user)
-
-      if exact_category
-        torrents = torrents.where(category_id: exact_category)
-      elsif category
-        torrents = torrents.where(category_id: Category.family_ids_for(category))
-      end
-
-      torrents.order(created_at: :desc)
-    end
-
-    field :categories, [Types::CategoryType], null: false,
-      description: "List all available torrent categories"
-    def categories
-      Category.all.map { |id, name| { id:, name: } }
-    end
+    include Queries::CurrentUser
+    include Queries::Torrents
+    include Queries::Categories
   end
 end
