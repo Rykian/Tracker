@@ -155,6 +155,21 @@ RSpec.describe 'GraphQL Queries', type: :request do
       expect(category['name']).to be_a(String)
     end
 
+    it 'returns the magnet link for each torrent' do
+      target_torrent = torrents.first
+
+      post '/graphql', params: { query: query }
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      node = json.dig('data', 'torrents', 'edges')
+        .map { |edge| edge['node'] }
+        .find { |torrent| torrent['id'] == target_torrent.id.to_s }
+
+      expect(node).to be_present
+      expect(node['magnetLink']).to eq(target_torrent.magnet_link)
+    end
+
     context 'with category filter' do
       before do
         torrents.each { |t| t.update(category_id: 5000) }  # TV

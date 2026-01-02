@@ -24,10 +24,6 @@ module Types
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
 
-    def magnet_link
-      object.magnet_link
-    end
-
     def category
       return nil unless object.category_id.present?
       { id: object.category_id, name: object.category_name }
