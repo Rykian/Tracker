@@ -13,7 +13,7 @@ module Mutations
 
     def resolve(email:, password:)
       user = User.new(email: email, password: password)
-      
+
       if user.save
         token = JsonWebToken.encode(user_id: user.id)
         {

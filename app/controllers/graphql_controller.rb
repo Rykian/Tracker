@@ -25,7 +25,7 @@ class GraphqlController < ApplicationController
   def current_user
     return nil unless auth_header
 
-    token = auth_header.split(' ').last
+    token = auth_header.split(" ").last
     decoded = JsonWebToken.decode(token)
     return nil unless decoded
 
@@ -35,7 +35,7 @@ class GraphqlController < ApplicationController
   end
 
   def auth_header
-    request.headers['Authorization']
+    request.headers["Authorization"]
   end
 
   # Handle variables in form data, JSON body, or a blank value

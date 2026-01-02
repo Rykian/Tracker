@@ -13,7 +13,7 @@ class CreatePeers < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    
+
     add_index :peers, [:torrent_id, :peer_id, :ip, :port], unique: true, name: 'index_peers_on_torrent_peer_ip_port'
     add_index :peers, :last_announce
     add_index :peers, [:torrent_id, :left]

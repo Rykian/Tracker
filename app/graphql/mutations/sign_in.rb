@@ -15,7 +15,7 @@ module Mutations
 
     def resolve(email:, password:)
       user = User.find_by(email: email)
-      
+
       if user&.authenticate(password)
         token = JsonWebToken.encode(user_id: user.id)
         {

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class JsonWebToken
-  SECRET_KEY = Rails.application.credentials.secret_key_base || 
+  SECRET_KEY = Rails.application.credentials.secret_key_base ||
                Rails.application.secret_key_base ||
-               ENV['SECRET_KEY_BASE'] ||
+               ENV["SECRET_KEY_BASE"] ||
                raise("Missing secret key for JWT tokens")
 
   def self.encode(payload, exp = 24.hours.from_now)

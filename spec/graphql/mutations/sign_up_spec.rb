@@ -27,11 +27,11 @@ RSpec.describe 'SignUp Mutation', type: :request do
 
     it 'returns user data and token' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       data = json['data']['signUp']
-      
+
       expect(data['user']['id']).to be_present
       expect(data['user']['email']).to be_nil # Email is private
       expect(data['token']).to be_present
@@ -50,10 +50,10 @@ RSpec.describe 'SignUp Mutation', type: :request do
 
     it 'returns errors' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       json = JSON.parse(response.body)
       data = json['data']['signUp']
-      
+
       expect(data['user']).to be_nil
       expect(data['token']).to be_nil
       expect(data['errors']).to include('Email is invalid')
@@ -67,10 +67,10 @@ RSpec.describe 'SignUp Mutation', type: :request do
 
     it 'returns email taken error' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       json = JSON.parse(response.body)
       data = json['data']['signUp']
-      
+
       expect(data['errors']).to include('Email has already been taken')
     end
   end

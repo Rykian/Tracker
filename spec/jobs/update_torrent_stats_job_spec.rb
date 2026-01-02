@@ -14,14 +14,14 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'updates torrent seeders count' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(2)
       end
 
       it 'updates torrent leechers count' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.leechers).to eq(2)
       end
     end
@@ -33,7 +33,7 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'updates seeders to correct count' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(2)
         expect(torrent.leechers).to eq(0)
       end
@@ -46,7 +46,7 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'updates leechers to correct count' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(0)
         expect(torrent.leechers).to eq(2)
       end
@@ -61,7 +61,7 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'only counts active peers (within last hour)' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(1) # Only active_seeder
         expect(torrent.leechers).to eq(1) # Only active_leecher
       end
@@ -70,10 +70,10 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
     context 'with no peers' do
       it 'sets both counts to zero' do
         torrent.update(seeders: 5, leechers: 3)
-        
+
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(0)
         expect(torrent.leechers).to eq(0)
       end
@@ -88,7 +88,7 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
 
       it 'does not perform any updates' do
         expect_any_instance_of(Torrent).not_to receive(:update)
-        
+
         described_class.new.perform('invalid-uuid')
       end
     end
@@ -105,15 +105,15 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'correctly updates when leechers become seeders' do
         # Initial state: 1 leecher
         leecher = create(:peer, torrent: torrent, user: user, left: 1000, last_announce: 30.minutes.ago)
-        
+
         described_class.new.perform(torrent.id)
         torrent.reload
         expect(torrent.seeders).to eq(0)
         expect(torrent.leechers).to eq(1)
-        
+
         # Peer completes download
         leecher.update(left: 0, last_announce: Time.current)
-        
+
         described_class.new.perform(torrent.id)
         torrent.reload
         expect(torrent.seeders).to eq(1)
@@ -128,7 +128,7 @@ RSpec.describe UpdateTorrentStatsJob, type: :job do
       it 'counts all peers regardless of user' do
         described_class.new.perform(torrent.id)
         torrent.reload
-        
+
         expect(torrent.seeders).to eq(1)
         expect(torrent.leechers).to eq(1)
       end

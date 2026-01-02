@@ -5,7 +5,7 @@ RSpec.describe CleanupStalePeersJob, type: :job do
     let!(:user) { create(:user) }
     let!(:torrent1) { create(:torrent, user: user) }
     let!(:torrent2) { create(:torrent, user: user) }
-    
+
     context 'with stale peers' do
       let!(:stale_peer1) { create(:peer, torrent: torrent1, user: user, last_announce: 2.hours.ago) }
       let!(:stale_peer2) { create(:peer, torrent: torrent1, user: user, last_announce: 90.minutes.ago) }
@@ -16,7 +16,7 @@ RSpec.describe CleanupStalePeersJob, type: :job do
         expect {
           described_class.new.perform
         }.to change(Peer, :count).by(-3)
-        
+
         expect(Peer.exists?(stale_peer1.id)).to be false
         expect(Peer.exists?(stale_peer2.id)).to be false
         expect(Peer.exists?(stale_peer3.id)).to be false
@@ -49,7 +49,7 @@ RSpec.describe CleanupStalePeersJob, type: :job do
 
       it 'logs zero cleanup' do
         expect(Rails.logger).to receive(:info).with(/Cleaned up 0 stale peers/)
-        
+
         described_class.new.perform
       end
     end
@@ -72,7 +72,7 @@ RSpec.describe CleanupStalePeersJob, type: :job do
         expect {
           described_class.new.perform
         }.to change(Peer, :count).by(-1)
-        
+
         expect(Peer.exists?(stale_peer.id)).to be false
         expect(Peer.exists?(active_peer.id)).to be true
       end

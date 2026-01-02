@@ -22,11 +22,11 @@ RSpec.describe 'SignIn Mutation', type: :request do
 
     it 'returns user and token' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       data = json['data']['signIn']
-      
+
       expect(data['user']['id']).to eq(user.id.to_s)
       expect(data['user']['email']).to be_nil # Email is private
       expect(data['token']).to be_present
@@ -39,10 +39,10 @@ RSpec.describe 'SignIn Mutation', type: :request do
 
     it 'returns authentication error' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       json = JSON.parse(response.body)
       data = json['data']['signIn']
-      
+
       expect(data['user']).to be_nil
       expect(data['token']).to be_nil
       expect(data['errors']).to include('Invalid email or password')
@@ -54,10 +54,10 @@ RSpec.describe 'SignIn Mutation', type: :request do
 
     it 'returns authentication error' do
       post '/graphql', params: { query: mutation, variables: variables }
-      
+
       json = JSON.parse(response.body)
       data = json['data']['signIn']
-      
+
       expect(data['user']).to be_nil
       expect(data['token']).to be_nil
       expect(data['errors']).to include('Invalid email or password')

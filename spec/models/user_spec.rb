@@ -35,7 +35,7 @@ RSpec.describe User, type: :model do
     it 'prevents duplicate emails' do
       create(:user, email: 'test@example.com')
       duplicate_user = build(:user, email: 'test@example.com')
-      
+
       expect(duplicate_user).to_not be_valid
       expect(duplicate_user.errors[:email]).to include('has already been taken')
     end
@@ -86,14 +86,14 @@ RSpec.describe User, type: :model do
 
     it 'increments uploaded and downloaded' do
       user.update_stats!(500, 250)
-      
+
       expect(user.reload.uploaded).to eq(1500)
       expect(user.reload.downloaded).to eq(750)
     end
 
     it 'handles zero deltas' do
       user.update_stats!(0, 0)
-      
+
       expect(user.reload.uploaded).to eq(1000)
       expect(user.reload.downloaded).to eq(500)
     end

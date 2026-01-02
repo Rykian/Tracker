@@ -5,7 +5,7 @@ RSpec.describe TrackerController, type: :request do
     let!(:user) { create(:user) }
     let!(:torrent) { create(:torrent, user: user) }
     let(:peer_id) { SecureRandom.hex(10) } # 20 character string
-    
+
     let(:valid_params) do
       {
         info_hash: torrent.info_hash, # send as hex string to mimic real announce query
@@ -21,14 +21,14 @@ RSpec.describe TrackerController, type: :request do
     context 'with valid parameters' do
       it 'creates a new peer' do
         get '/announce', params: valid_params
-        
+
         expect(response).to have_http_status(:success)
         expect(Peer.count).to eq(1)
       end
 
       it 'returns bencoded response with interval and peer stats' do
         get '/announce', params: valid_params
-        
+
         expect(response).to have_http_status(:success)
         expect(response.body).to include('interval')
         expect(response.content_type).to start_with('text/plain')
@@ -38,14 +38,14 @@ RSpec.describe TrackerController, type: :request do
         # First announce
         get '/announce', params: valid_params
         peer = Peer.last
-        
+
         # Second announce with updated stats
         updated_params = valid_params.merge(uploaded: 2048, downloaded: 4096)
-        
+
         expect {
           get '/announce', params: updated_params
         }.not_to change(Peer, :count)
-        
+
         peer.reload
         expect(peer.uploaded).to eq(2048)
         expect(peer.downloaded).to eq(4096)
@@ -54,9 +54,9 @@ RSpec.describe TrackerController, type: :request do
       it 'updates user upload/download stats' do
         initial_uploaded = user.uploaded
         initial_downloaded = user.downloaded
-        
+
         get '/announce', params: valid_params
-        
+
         user.reload
         expect(user.uploaded).to eq(initial_uploaded + 1024)
         expect(user.downloaded).to eq(initial_downloaded + 2048)
@@ -68,11 +68,11 @@ RSpec.describe TrackerController, type: :request do
         user.reload
         uploaded_after_first = user.uploaded
         downloaded_after_first = user.downloaded
-        
+
         # Second announce with increased stats
         updated_params = valid_params.merge(uploaded: 3072, downloaded: 6144)
         get '/announce', params: updated_params
-        
+
         user.reload
         expect(user.uploaded).to eq(uploaded_after_first + 2048) # Delta: 3072 - 1024
         expect(user.downloaded).to eq(downloaded_after_first + 4096) # Delta: 6144 - 2048
@@ -87,7 +87,7 @@ RSpec.describe TrackerController, type: :request do
       it 'uses client IP address for peer' do
         get '/announce', params: valid_params
         peer = Peer.last
-        
+
         expect(peer.ip).to eq('127.0.0.1') # Default test IP
       end
     end
@@ -96,7 +96,7 @@ RSpec.describe TrackerController, type: :request do
       context 'when event is started' do
         it 'creates peer with started event' do
           get '/announce', params: valid_params.merge(event: 'started')
-          
+
           peer = Peer.last
           expect(peer.event).to eq('started')
           expect(Peer.count).to eq(1)
@@ -106,7 +106,7 @@ RSpec.describe TrackerController, type: :request do
       context 'when event is completed' do
         it 'creates peer with completed event' do
           get '/announce', params: valid_params.merge(event: 'completed', left: 0)
-          
+
           peer = Peer.last
           expect(peer.event).to eq('completed')
           expect(peer.left).to eq(0)
@@ -118,10 +118,10 @@ RSpec.describe TrackerController, type: :request do
           # Create peer first
           get '/announce', params: valid_params
           expect(Peer.count).to eq(1)
-          
+
           # Send stopped event
           get '/announce', params: valid_params.merge(event: 'stopped')
-          
+
           expect(Peer.count).to eq(0)
         end
 
@@ -130,10 +130,10 @@ RSpec.describe TrackerController, type: :request do
           get '/announce', params: valid_params
           user.reload
           uploaded_before = user.uploaded
-          
+
           # Stopped with increased upload
           get '/announce', params: valid_params.merge(event: 'stopped', uploaded: 5120)
-          
+
           user.reload
           expect(user.uploaded).to eq(uploaded_before + 4096) # Delta: 5120 - 1024
         end
@@ -143,7 +143,7 @@ RSpec.describe TrackerController, type: :request do
     context 'with missing parameters' do
       it 'returns error when info_hash is missing' do
         get '/announce', params: valid_params.except(:info_hash)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('failure reason')
         expect(response.body).to include('info_hash')
@@ -151,28 +151,28 @@ RSpec.describe TrackerController, type: :request do
 
       it 'returns error when peer_id is missing' do
         get '/announce', params: valid_params.except(:peer_id)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('peer_id')
       end
 
       it 'returns error when port is missing' do
         get '/announce', params: valid_params.except(:port)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('port')
       end
 
       it 'returns error when user_id is missing' do
         get '/announce', params: valid_params.except(:user_id)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('user_id')
       end
 
       it 'returns error for multiple missing parameters' do
         get '/announce', params: valid_params.except(:port, :uploaded)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('port')
         expect(response.body).to include('uploaded')
@@ -183,14 +183,14 @@ RSpec.describe TrackerController, type: :request do
       it 'returns error when torrent not found' do
         invalid_hash = [SecureRandom.hex(20)].pack('H*')
         get '/announce', params: valid_params.merge(info_hash: invalid_hash)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('Torrent not found')
       end
 
       it 'returns error when user not found' do
         get '/announce', params: valid_params.merge(user_id: 'invalid-uuid')
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('User not found')
       end
@@ -198,7 +198,7 @@ RSpec.describe TrackerController, type: :request do
       it 'returns error when peer save fails' do
         # Create invalid peer data (port out of range will fail validation)
         get '/announce', params: valid_params.merge(port: 70000)
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('Failed to update peer')
       end
@@ -207,7 +207,7 @@ RSpec.describe TrackerController, type: :request do
     context 'bencoding' do
       it 'returns properly bencoded response' do
         get '/announce', params: valid_params
-        
+
         # Check for bencode dictionary start
         expect(response.body).to start_with('d')
         # Check for bencode structure (keys should be sorted)
@@ -224,7 +224,7 @@ RSpec.describe TrackerController, type: :request do
 
       it 'includes active peers in compact binary format' do
         get '/announce', params: valid_params
-        
+
         expect(response).to have_http_status(:success)
         # Response should include peers list
         expect(response.body).to include('5:peers')
@@ -235,9 +235,9 @@ RSpec.describe TrackerController, type: :request do
         55.times do
           create(:peer, torrent: torrent, user: other_user, last_announce: Time.current)
         end
-        
+
         get '/announce', params: valid_params
-        
+
         # Hard to test exact binary peer count, but response should succeed
         expect(response).to have_http_status(:success)
       end
@@ -248,11 +248,11 @@ RSpec.describe TrackerController, type: :request do
     let!(:user) { create(:user) }
     let!(:torrent1) { create(:torrent, user: user, seeders: 5, leechers: 3, completed: 100) }
     let!(:torrent2) { create(:torrent, user: user, seeders: 2, leechers: 1, completed: 50) }
-    
+
     context 'with single info_hash' do
       it 'returns torrent stats' do
         get '/scrape', params: { info_hash: torrent1.info_hash }
-        
+
         expect(response).to have_http_status(:success)
         expect(response.body).to include('files')
         expect(response.body).to include('complete')
@@ -262,7 +262,7 @@ RSpec.describe TrackerController, type: :request do
 
       it 'returns correct stats values' do
         get '/scrape', params: { info_hash: torrent1.info_hash }
-        
+
         # Check for bencoded integers
         expect(response.body).to include("i#{torrent1.seeders}e") # complete
         expect(response.body).to include("i#{torrent1.leechers}e") # incomplete
@@ -273,7 +273,7 @@ RSpec.describe TrackerController, type: :request do
     context 'with multiple info_hashes' do
       it 'returns stats for multiple torrents' do
         get '/scrape', params: { info_hash: [torrent1.info_hash, torrent2.info_hash] }
-        
+
         expect(response).to have_http_status(:success)
         # Both torrents should be in response
         expect(response.body).to include("i#{torrent1.seeders}e")
@@ -284,7 +284,7 @@ RSpec.describe TrackerController, type: :request do
     context 'with no info_hash' do
       it 'returns error' do
         get '/scrape'
-        
+
         expect(response).to have_http_status(:bad_request)
         expect(response.body).to include('No info_hash provided')
       end
@@ -293,9 +293,9 @@ RSpec.describe TrackerController, type: :request do
     context 'with non-existent torrent' do
       it 'excludes non-existent torrents from response' do
         invalid_hash = SecureRandom.hex(20)
-        
+
         get '/scrape', params: { info_hash: [torrent1.info_hash, invalid_hash] }
-        
+
         expect(response).to have_http_status(:success)
         # Should include valid torrent
         expect(response.body).to include("i#{torrent1.seeders}e")
@@ -305,7 +305,7 @@ RSpec.describe TrackerController, type: :request do
     context 'bencoding' do
       it 'returns properly bencoded response' do
         get '/scrape', params: { info_hash: torrent1.info_hash }
-        
+
         # Check for bencode dictionary start
         expect(response.body).to start_with('d')
         expect(response.body).to end_with('e')

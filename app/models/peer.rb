@@ -11,7 +11,7 @@ class Peer < ApplicationRecord
   validates :event, inclusion: { in: %w[started completed stopped], allow_nil: true }
   validates :last_announce, presence: true
 
-  scope :active, -> { where('last_announce > ?', 1.hour.ago) }
+  scope :active, -> { where("last_announce > ?", 1.hour.ago) }
   scope :seeders, -> { where(left: 0) }
   scope :leechers, -> { where('"peers"."left" > ?', 0) }
 

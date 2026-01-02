@@ -13,7 +13,7 @@ RSpec.describe JsonWebToken do
     it 'includes expiration time' do
       token = JsonWebToken.encode(payload)
       decoded = JWT.decode(token, JsonWebToken::SECRET_KEY)[0]
-      
+
       expect(decoded['exp']).to be_present
       expect(decoded['exp']).to be > Time.current.to_i
     end
@@ -25,7 +25,7 @@ RSpec.describe JsonWebToken do
 
       it 'decodes the token and returns payload' do
         decoded = JsonWebToken.decode(token)
-        
+
         expect(decoded[:user_id]).to eq(123)
         expect(decoded[:exp]).to be_present
       end

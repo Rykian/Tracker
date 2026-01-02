@@ -7,7 +7,7 @@ class UpdateTorrentStatsJob < ApplicationJob
 
     # Count active peers only (announced within last hour)
     active_peers = torrent.peers.active
-    
+
     torrent.update(
       seeders: active_peers.seeders.count,
       leechers: active_peers.leechers.count

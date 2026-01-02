@@ -38,19 +38,19 @@ RSpec.describe 'Torrents Query', type: :request do
 
     it 'returns all torrents' do
       post '/graphql', params: { query: query }
-      
+
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       edges = json.dig('data', 'torrents', 'edges')
-      
+
       expect(edges).to be_present
       data = edges.map { |edge| edge['node'] }
-      
+
       expect(data.length).to eq(5)
       expect(data[0]['name']).to be_present
       expect(data[0]['infoHash']).to be_present
       expect(data[0]['magnetLink']).to include('magnet:')
-      
+
       # Check category object
       category = data[0]['category']
       expect(category).to be_present
@@ -103,12 +103,12 @@ RSpec.describe 'Torrents Query', type: :request do
 
       it 'filters torrents by main category and its subcategories' do
         post '/graphql', params: { query: filtered_query }
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         edges = json['data']['torrents']['edges']
         data = edges.map { |edge| edge['node'] }
-        
+
         expect(data.length).to eq(3)
         expect(data.all? { |t| t.dig('category', 'id') / 1000 == 5 }).to be true
       end
@@ -142,12 +142,12 @@ RSpec.describe 'Torrents Query', type: :request do
 
       it 'filters torrents by the exact category only' do
         post '/graphql', params: { query: filtered_query }
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         edges = json['data']['torrents']['edges']
         data = edges.map { |edge| edge['node'] }
-        
+
         expect(data.length).to eq(1)
         expect(data.first.dig('category', 'id')).to eq(5010)
       end
@@ -171,12 +171,12 @@ RSpec.describe 'Torrents Query', type: :request do
 
       it 'limits and offsets results' do
         post '/graphql', params: { query: paginated_query }
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         edges = json['data']['torrents']['edges']
         data = edges.map { |edge| edge['node'] }
-        
+
         expect(data.length).to eq(2)
       end
     end
@@ -184,11 +184,11 @@ RSpec.describe 'Torrents Query', type: :request do
     context 'email privacy - unauthenticated user' do
       it 'does not return torrent creator email for unauthenticated users' do
         post '/graphql', params: { query: query }
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         data = json.dig('data', 'torrents', 'edges').map { |edge| edge['node'] }
-        
+
         expect(data[0]['user']['email']).to be_nil
       end
     end
@@ -206,7 +206,7 @@ RSpec.describe 'Torrents Query', type: :request do
             }
             torrents {
               edges {
-                node { 
+                node {#{' '}
                   user {
                     id
                     email
@@ -220,13 +220,13 @@ RSpec.describe 'Torrents Query', type: :request do
 
       it 'returns email only for own profile' do
         post '/graphql', params: { query: own_torrents_query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        
+
         # Current user's own email should be visible
         expect(json['data']['currentUser']['email']).to eq(user.email)
-        
+
         # But other users' emails should be nil even though torrents are listed
         torrents_data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
         other_user_torrents = torrents_data.select { |t| t['user']['id'] != user.id.to_s }

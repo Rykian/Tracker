@@ -22,11 +22,11 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
       it 'returns current user data' do
         post '/graphql', params: { query: query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         data = json['data']['currentUser']
-        
+
         expect(data['id']).to eq(user.id.to_s)
         expect(data['email']).to eq(user.email)
         expect(data['createdAt']).to be_present
@@ -37,10 +37,10 @@ RSpec.describe 'CurrentUser Query', type: :request do
     context 'when user is not authenticated' do
       it 'returns null for current user' do
         post '/graphql', params: { query: query }
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        
+
         expect(json['data']['currentUser']).to be_nil
       end
     end
@@ -50,10 +50,10 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
       it 'returns null for current user' do
         post '/graphql', params: { query: query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        
+
         expect(json['data']['currentUser']).to be_nil
       end
     end
@@ -65,10 +65,10 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
       it 'returns null for current user' do
         post '/graphql', params: { query: query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        
+
         expect(json['data']['currentUser']).to be_nil
       end
     end
@@ -88,10 +88,10 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
     it 'returns null when not authenticated' do
       post '/graphql', params: { query: query }
-      
+
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      
+
       expect(json['data']['currentUser']).to be_nil
     end
   end
@@ -116,10 +116,10 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
       it 'returns own email' do
         post '/graphql', params: { query: query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        
+
         expect(json['data']['currentUser']['email']).to eq(user.email)
       end
     end
@@ -145,11 +145,11 @@ RSpec.describe 'CurrentUser Query', type: :request do
 
       it 'returns nil for other users email' do
         post '/graphql', params: { query: query }, headers: headers
-        
+
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
-        
+
         expect(data[0]['user']['id']).to eq(other_user.id.to_s)
         expect(data[0]['user']['email']).to be_nil
       end

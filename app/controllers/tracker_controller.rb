@@ -3,7 +3,7 @@ class TrackerController < ApplicationController
   def announce
     required_params = [:info_hash, :peer_id, :port, :uploaded, :downloaded, :left, :user_id]
     missing_params = required_params.select { |param| params[param].blank? }
-    
+
     if missing_params.any?
       return render_error("Missing required parameters: #{missing_params.join(', ')}")
     end
@@ -14,20 +14,20 @@ class TrackerController < ApplicationController
       raw_info_hash.downcase
     else
       begin
-        raw_info_hash.to_s.unpack1('H*')
+        raw_info_hash.to_s.unpack1("H*")
       rescue ArgumentError
-        return render_error('Invalid info_hash')
+        return render_error("Invalid info_hash")
       end
     end
     torrent = Torrent.find_by(info_hash: info_hash)
-    
+
     unless torrent
-      return render_error('Torrent not found')
+      return render_error("Torrent not found")
     end
 
     user = User.find_by(id: params[:user_id])
     unless user
-      return render_error('User not found')
+      return render_error("User not found")
     end
 
     peer = torrent.peers.find_or_initialize_by(
@@ -54,7 +54,7 @@ class TrackerController < ApplicationController
       user.update_stats!(uploaded_delta, downloaded_delta)
     end
 
-    if params[:event] == 'stopped'
+    if params[:event] == "stopped"
       peer.destroy
       # Update torrent stats after peer removal
       UpdateTorrentStatsJob.perform_later(torrent.id)
@@ -62,12 +62,12 @@ class TrackerController < ApplicationController
       # Update torrent stats asynchronously
       UpdateTorrentStatsJob.perform_later(torrent.id)
     else
-      return render_error('Failed to update peer')
+      return render_error("Failed to update peer")
     end
 
     # Return peer list
     peers = torrent.peers.active.limit(50).pluck(:ip, :port)
-    
+
     response = {
       interval: 1800, # 30 minutes
       complete: torrent.seeders,
@@ -75,15 +75,15 @@ class TrackerController < ApplicationController
       peers: encode_peers(peers)
     }
 
-    render plain: bencode(response), content_type: 'text/plain'
+    render plain: bencode(response), content_type: "text/plain"
   end
 
   # GET /scrape?info_hash=...&info_hash=...
   def scrape
     info_hashes = [params[:info_hash]].flatten.compact
-    
+
     if info_hashes.empty?
-      return render_error('No info_hash provided')
+      return render_error("No info_hash provided")
     end
 
     files = {}
@@ -93,14 +93,14 @@ class TrackerController < ApplicationController
         raw_hash.downcase
       else
         begin
-          raw_hash.to_s.unpack1('H*')
+          raw_hash.to_s.unpack1("H*")
         rescue ArgumentError
           next # Skip invalid hashes
         end
       end
-      
+
       torrent = Torrent.find_by(info_hash: info_hash)
-      
+
       if torrent
         files[raw_hash] = {
           complete: torrent.seeders,
@@ -111,19 +111,19 @@ class TrackerController < ApplicationController
     end
 
     response = { files: files }
-    render plain: bencode(response), content_type: 'text/plain'
+    render plain: bencode(response), content_type: "text/plain"
   end
 
   private
 
   def render_error(message)
-    render plain: bencode({ 'failure reason' => message }), content_type: 'text/plain', status: :bad_request
+    render plain: bencode({ "failure reason" => message }), content_type: "text/plain", status: :bad_request
   end
 
   def encode_peers(peers)
     # Compact binary format: 6 bytes per peer (4 for IP, 2 for port)
     peers.map do |ip, port|
-      ip.split('.').map(&:to_i).pack('C*') + [port].pack('n')
+      ip.split(".").map(&:to_i).pack("C*") + [port].pack("n")
     end.join
   end
 
@@ -138,7 +138,7 @@ class TrackerController < ApplicationController
     when Hash
       "d#{obj.sort.map { |k, v| bencode(k.to_s) + bencode(v) }.join}e"
     else
-      ''
+      ""
     end
   end
 end
