@@ -20,6 +20,29 @@ RSpec.describe Torrent, type: :model do
     it { should validate_numericality_of(:seeders).only_integer.is_greater_than_or_equal_to(0) }
     it { should validate_numericality_of(:leechers).only_integer.is_greater_than_or_equal_to(0) }
     it { should validate_numericality_of(:completed).only_integer.is_greater_than_or_equal_to(0) }
+
+    describe 'category_id validation' do
+      it 'allows valid Torznab category ID' do
+        torrent = build(:torrent, category_id: 2000)
+        expect(torrent).to be_valid
+      end
+
+      it 'allows valid Torznab subcategory ID' do
+        torrent = build(:torrent, category_id: 2040)
+        expect(torrent).to be_valid
+      end
+
+      it 'allows nil category_id' do
+        torrent = build(:torrent, category_id: nil)
+        expect(torrent).to be_valid
+      end
+
+      it 'rejects invalid category_id' do
+        torrent = build(:torrent, category_id: 9999)
+        expect(torrent).not_to be_valid
+        expect(torrent.errors[:category_id]).to include('must be a valid Torznab category ID')
+      end
+    end
   end
 
   describe '#magnet_link' do
@@ -230,6 +253,29 @@ RSpec.describe Torrent, type: :model do
       torrent.update(name: 'Updated Name')
       
       expect(torrent.updated_at).to be > original_updated_at
+    end
+  end
+
+  describe '#category_name' do
+    it 'returns the category name for a valid category_id' do
+      torrent = create(:torrent, category_id: 2000)
+      expect(torrent.category_name).to eq("Movies")
+    end
+
+    it 'returns the subcategory name for a valid subcategory_id' do
+      torrent = create(:torrent, category_id: 2040)
+      expect(torrent.category_name).to eq("Movies/HD")
+    end
+
+    it 'returns nil when category_id is nil' do
+      torrent = create(:torrent, category_id: nil)
+      expect(torrent.category_name).to be_nil
+    end
+
+    it 'returns nil for an invalid category_id' do
+      torrent = build(:torrent, category_id: 9999)
+      torrent.save(validate: false) # Skip validation
+      expect(torrent.category_name).to be_nil
     end
   end
 end

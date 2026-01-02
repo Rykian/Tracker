@@ -115,7 +115,10 @@ RSpec.describe 'GraphQL Queries', type: :request do
                 seeders
                 leechers
                 completed
-                category
+                category {
+                  id
+                  name
+                }
                 magnetLink
                 user {
                   id
@@ -133,29 +136,42 @@ RSpec.describe 'GraphQL Queries', type: :request do
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      edges = json['data']['torrents']['edges']
+      edges = json.dig('data', 'torrents', 'edges')
+      
+      expect(edges).to be_present
       data = edges.map { |edge| edge['node'] }
       
       expect(data.length).to eq(5)
       expect(data[0]['name']).to be_present
       expect(data[0]['infoHash']).to be_present
       expect(data[0]['magnetLink']).to include('magnet:')
+      
+      # Check category object
+      category = data[0]['category']
+      expect(category).to be_present
+      expect(category).to have_key('id')
+      expect(category).to have_key('name')
+      expect(category['id']).to be_a(Integer)
+      expect(category['name']).to be_a(String)
     end
 
     context 'with category filter' do
       before do
-        torrents.each { |t| t.update(category: 'TV') }
-        other_torrents.each { |t| t.update(category: 'Software') }
+        torrents.each { |t| t.update(category_id: 5000) }  # TV
+        other_torrents.each { |t| t.update(category_id: 2000) }  # Movies
       end
 
       let(:filtered_query) do
         <<~GQL
           query {
-            torrents(category: "TV") {
+            torrents(categoryId: 5000) {
               edges {
                 node {
                   id
-                  category
+                  category {
+                    id
+                    name
+                  }
                 }
               }
             }
@@ -172,7 +188,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         data = edges.map { |edge| edge['node'] }
         
         expect(data.length).to eq(3)
-        expect(data.all? { |t| t['category'] == 'TV' }).to be true
+        expect(data.all? { |t| t.dig('category', 'id') == 5000 }).to be true
       end
     end
 
@@ -210,7 +226,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
+        data = json.dig('data', 'torrents', 'edges').map { |edge| edge['node'] }
         
         expect(data[0]['user']['email']).to be_nil
       end
@@ -316,6 +332,63 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(data[0]['user']['id']).to eq(other_user.id.to_s)
         expect(data[0]['user']['email']).to be_nil
+      end
+    end
+  end
+
+  describe 'categories query' do
+    let(:query) do
+      <<~GQL
+        query {
+          categories {
+            id
+            name
+          }
+        }
+      GQL
+    end
+
+    it 'returns all available categories' do
+      post '/graphql', params: { query: query }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      categories = json['data']['categories']
+      
+      expect(categories).to be_an(Array)
+      expect(categories.length).to eq(67) # Total Torznab categories
+      
+      # Check some main categories exist
+      category_ids = categories.map { |c| c['id'] }
+      expect(category_ids).to include(1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000)
+    end
+
+    it 'returns category with correct structure' do
+      post '/graphql', params: { query: query }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      movies_category = json['data']['categories'].find { |c| c['id'] == 2000 }
+      
+      expect(movies_category).to include(
+        'id' => 2000,
+        'name' => 'Movies'
+      )
+    end
+
+    it 'includes all subcategories' do
+      post '/graphql', params: { query: query }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      categories = json['data']['categories']
+      
+      # Check Movies subcategories
+      movie_subcats = [2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080]
+      category_ids = categories.map { |c| c['id'] }
+      
+      movie_subcats.each do |subcat_id|
+        expect(category_ids).to include(subcat_id)
       end
     end
   end

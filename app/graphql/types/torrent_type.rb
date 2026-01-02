@@ -12,7 +12,7 @@ module Types
     field :num_pieces, Integer, null: true
     field :files, [GraphQL::Types::JSON], null: false
     field :description, String, null: true
-    field :category, String, null: true
+    field :category, Types::CategoryType, null: true, description: "Category object with ID and name"
     field :private, Boolean, null: false
     field :created_by, String, null: true
     field :announce_urls, String, null: true
@@ -26,6 +26,11 @@ module Types
 
     def magnet_link
       object.magnet_link
+    end
+
+    def category
+      return nil unless object.category_id.present?
+      { id: object.category_id, name: object.category_name }
     end
   end
 end

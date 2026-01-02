@@ -8,7 +8,7 @@ FactoryBot.define do
     num_pieces { (size.to_f / piece_length).ceil }
     files { [{ "path" => Faker::File.file_name, "length" => size }] }
     description { Faker::Lorem.paragraph }
-    category { %w[Movies TV Music Games Software Books Other].sample }
+    category_id { Category.ids.sample }
     private { false }
     created_by { Faker::Internet.username }
     announce_urls { "http://tracker.example.com:8080/announce\nudp://tracker.example.org:6969/announce" }

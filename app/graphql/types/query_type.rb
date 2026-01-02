@@ -29,12 +29,18 @@ module Types
 
     field :torrents, Types::TorrentType.connection_type, null: false do
       description "List of torrents"
-      argument :category, String, required: false, description: "Filter by category"
+      argument :category_id, Integer, required: false, description: "Filter by category ID"
     end
-    def torrents(category: nil)
+    def torrents(category_id: nil)
       torrents = Torrent.includes(:user)
-      torrents = torrents.where(category:) unless category.nil?
+      torrents = torrents.where(category_id:) unless category_id.nil?
       torrents.order(created_at: :desc)
+    end
+
+    field :categories, [Types::CategoryType], null: false,
+      description: "List all available torrent categories"
+    def categories
+      Category.all.map { |id, name| { id:, name: } }
     end
   end
 end

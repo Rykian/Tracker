@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_31_172248) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_02_100518) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -37,7 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_31_172248) do
 
   create_table "torrents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "announce_urls"
-    t.string "category"
+    t.integer "category_id"
     t.integer "completed", default: 0
     t.datetime "created_at", null: false
     t.string "created_by"
@@ -53,7 +53,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_31_172248) do
     t.bigint "size", null: false
     t.datetime "updated_at", null: false
     t.uuid "user_id", null: false
-    t.index ["category"], name: "index_torrents_on_category"
+    t.index ["category_id"], name: "index_torrents_on_category_id"
     t.index ["created_at"], name: "index_torrents_on_created_at"
     t.index ["info_hash"], name: "index_torrents_on_info_hash", unique: true
     t.index ["user_id"], name: "index_torrents_on_user_id"
