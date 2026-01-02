@@ -106,18 +106,22 @@ RSpec.describe 'GraphQL Queries', type: :request do
       <<~GQL
         query {
           torrents {
-            id
-            name
-            size
-            infoHash
-            seeders
-            leechers
-            completed
-            category
-            magnetLink
-            user {
-              id
-              email
+            edges {
+              node {
+                id
+                name
+                size
+                infoHash
+                seeders
+                leechers
+                completed
+                category
+                magnetLink
+                user {
+                  id
+                  email
+                }
+              }
             }
           }
         }
@@ -129,7 +133,8 @@ RSpec.describe 'GraphQL Queries', type: :request do
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      data = json['data']['torrents']
+      edges = json['data']['torrents']['edges']
+      data = edges.map { |edge| edge['node'] }
       
       expect(data.length).to eq(5)
       expect(data[0]['name']).to be_present
@@ -147,8 +152,12 @@ RSpec.describe 'GraphQL Queries', type: :request do
         <<~GQL
           query {
             torrents(category: "TV") {
-              id
-              category
+              edges {
+                node {
+                  id
+                  category
+                }
+              }
             }
           }
         GQL
@@ -159,7 +168,8 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        data = json['data']['torrents']
+        edges = json['data']['torrents']['edges']
+        data = edges.map { |edge| edge['node'] }
         
         expect(data.length).to eq(3)
         expect(data.all? { |t| t['category'] == 'TV' }).to be true
@@ -170,9 +180,13 @@ RSpec.describe 'GraphQL Queries', type: :request do
       let(:paginated_query) do
         <<~GQL
           query {
-            torrents(limit: 2, offset: 0) {
-              id
-              name
+            torrents(first: 2) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
             }
           }
         GQL
@@ -183,7 +197,8 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        data = json['data']['torrents']
+        edges = json['data']['torrents']['edges']
+        data = edges.map { |edge| edge['node'] }
         
         expect(data.length).to eq(2)
       end
@@ -195,7 +210,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        data = json['data']['torrents']
+        data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
         
         expect(data[0]['user']['email']).to be_nil
       end
@@ -213,9 +228,13 @@ RSpec.describe 'GraphQL Queries', type: :request do
               email
             }
             torrents {
-              user {
-                id
-                email
+              edges {
+                node { 
+                  user {
+                    id
+                    email
+                  }
+                }
               }
             }
           }
@@ -232,7 +251,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         expect(json['data']['currentUser']['email']).to eq(user.email)
         
         # But other users' emails should be nil even though torrents are listed
-        torrents_data = json['data']['torrents']
+        torrents_data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
         other_user_torrents = torrents_data.select { |t| t['user']['id'] != user.id.to_s }
         other_user_torrents.each do |torrent|
           expect(torrent['user']['email']).to be_nil
@@ -275,9 +294,13 @@ RSpec.describe 'GraphQL Queries', type: :request do
         <<~GQL
           query {
             torrents {
-              user {
-                id
-                email
+              edges {
+                node {
+                  user {
+                    id
+                    email
+                  }
+                }
               }
             }
           }
@@ -289,7 +312,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        data = json['data']['torrents']
+        data = json['data']['torrents']['edges'].map { |edge| edge['node'] }
         
         expect(data[0]['user']['id']).to eq(other_user.id.to_s)
         expect(data[0]['user']['email']).to be_nil

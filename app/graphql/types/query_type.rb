@@ -27,18 +27,14 @@ module Types
       context[:current_user]
     end
 
-    field :torrents, [Types::TorrentType], null: false,
-      description: "Get all torrents" do
+    field :torrents, Types::TorrentType.connection_type, null: false do
+      description "List of torrents"
       argument :category, String, required: false, description: "Filter by category"
-      argument :limit, Integer, required: false, description: "Limit number of results"
-      argument :offset, Integer, required: false, description: "Offset for pagination"
     end
-    def torrents(category: nil, limit: nil, offset: nil)
-      query = Torrent.includes(:user)
-      query = query.where(category: category) if category.present?
-      query = query.offset(offset) if offset.present?
-      query = query.limit(limit) if limit.present?
-      query.order(created_at: :desc)
+    def torrents(category: nil)
+      torrents = Torrent.includes(:user)
+      torrents = torrents.where(category:) unless category.nil?
+      torrents.order(created_at: :desc)
     end
   end
 end
