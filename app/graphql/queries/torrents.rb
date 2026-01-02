@@ -1,10 +1,32 @@
 # frozen_string_literal: true
 
 module Queries
+  # Query torrents with optional category filtering
+  #
+  # Example:
+  #   query {
+  #     torrents(first: 10, category: 1) {
+  #       edges {
+  #         node {
+  #           id
+  #           name
+  #           infoHash
+  #           size
+  #           seeders
+  #           leechers
+  #           completed
+  #           magnetLink
+  #           category { id name }
+  #           createdAt
+  #         }
+  #       }
+  #     }
+  #   }
+  #
   module Torrents
     def self.included(base)
       base.field :torrents, Types::TorrentType.connection_type, null: false do
-        description "List of torrents"
+        description "List torrents with optional category filtering and pagination support"
         argument :category, Integer, required: false, description: "Filter by main category (includes subcategories)"
         argument :exact_category, Integer, required: false, description: "Filter by exact category ID"
       end

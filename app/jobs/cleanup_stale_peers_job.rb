@@ -1,3 +1,25 @@
+# Removes stale peer connections and updates torrent statistics
+#
+# Purpose:
+#   Periodically cleans up peers that haven't announced within the last hour,
+#   then refreshes statistics for all affected torrents.
+#
+# Trigger:
+#   - Runs automatically via recurring job schedule (see config/recurring.yml)
+#   - Can be manually invoked: CleanupStalePeersJob.perform_later
+#
+# Behavior:
+#   1. Identifies peers with last_announce older than 1 hour
+#   2. Collects affected torrent IDs before deletion
+#   3. Bulk deletes all stale peers
+#   4. Enqueues UpdateTorrentStatsJob for each affected torrent
+#   5. Logs cleanup results
+#
+# Performance:
+#   - Single database query to identify stale peers
+#   - Bulk deletion for efficiency
+#   - Async stats updates to avoid blocking
+#
 class CleanupStalePeersJob < ApplicationJob
   queue_as :default
 

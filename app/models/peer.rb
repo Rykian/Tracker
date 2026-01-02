@@ -1,3 +1,12 @@
+# Peer model - Active peer connections with state tracking
+#
+# Represents a BitTorrent client connected to the tracker for a specific torrent.
+# Peers are considered active if they've announced within the last hour.
+#
+# Lifecycle:
+#   - Created/updated on /announce requests
+#   - Deleted by CleanupStalePeersJob after 1 hour of inactivity
+#
 class Peer < ApplicationRecord
   belongs_to :torrent
   belongs_to :user
@@ -15,10 +24,16 @@ class Peer < ApplicationRecord
   scope :seeders, -> { where(left: 0) }
   scope :leechers, -> { where('"peers"."left" > ?', 0) }
 
+  # Returns true if peer has completed the download (left = 0)
+  #
+  # @return [Boolean] True if peer is a seeder, false otherwise
   def seeder?
     left.zero?
   end
 
+  # Returns true if peer is still downloading (left > 0)
+  #
+  # @return [Boolean] True if peer is a leecher, false otherwise
   def leecher?
     left > 0
   end

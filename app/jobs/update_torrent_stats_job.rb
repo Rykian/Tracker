@@ -1,3 +1,20 @@
+# Updates torrent statistics by counting active peers
+#
+# Purpose:
+#   Refreshes seeder and leecher counts for a specific torrent based on
+#   currently active peers (those who have announced within the last hour).
+#
+# Trigger:
+#   - Automatically enqueued after peer announces (via TrackerController)
+#   - Called by CleanupStalePeersJob after removing stale peers
+#
+# Usage:
+#   UpdateTorrentStatsJob.perform_later(torrent_id)
+#
+# Performance:
+#   - Operates on a single torrent at a time
+#   - Only counts active peers (optimized query with index on last_announce)
+#
 class UpdateTorrentStatsJob < ApplicationJob
   queue_as :default
 
