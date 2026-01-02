@@ -172,14 +172,16 @@ RSpec.describe 'GraphQL Queries', type: :request do
 
     context 'with category filter' do
       before do
-        torrents.each { |t| t.update(category_id: 5000) }  # TV
+        torrents[0].update(category_id: 5000)  # TV parent
+        torrents[1].update(category_id: 5010)  # TV/WEB-DL
+        torrents[2].update(category_id: 5080)  # TV/Documentary
         other_torrents.each { |t| t.update(category_id: 2000) }  # Movies
       end
 
       let(:filtered_query) do
         <<~GQL
           query {
-            torrents(categoryId: 5000) {
+            torrents(category: 5000) {
               edges {
                 node {
                   id
@@ -194,7 +196,7 @@ RSpec.describe 'GraphQL Queries', type: :request do
         GQL
       end
 
-      it 'filters torrents by category' do
+      it 'filters torrents by main category and its subcategories' do
         post '/graphql', params: { query: filtered_query }
         
         expect(response).to have_http_status(:ok)
@@ -203,7 +205,46 @@ RSpec.describe 'GraphQL Queries', type: :request do
         data = edges.map { |edge| edge['node'] }
         
         expect(data.length).to eq(3)
-        expect(data.all? { |t| t.dig('category', 'id') == 5000 }).to be true
+        expect(data.all? { |t| t.dig('category', 'id') / 1000 == 5 }).to be true
+      end
+    end
+
+    context 'with exact category filter' do
+      before do
+        torrents[0].update(category_id: 5000)
+        torrents[1].update(category_id: 5010)
+        torrents[2].update(category_id: 5040)  # TV/HD
+        other_torrents.each { |t| t.update(category_id: 2000) }
+      end
+
+      let(:filtered_query) do
+        <<~GQL
+          query {
+            torrents(exactCategory: 5010) {
+              edges {
+                node {
+                  id
+                  category {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        GQL
+      end
+
+      it 'filters torrents by the exact category only' do
+        post '/graphql', params: { query: filtered_query }
+        
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        edges = json['data']['torrents']['edges']
+        data = edges.map { |edge| edge['node'] }
+        
+        expect(data.length).to eq(1)
+        expect(data.first.dig('category', 'id')).to eq(5010)
       end
     end
 

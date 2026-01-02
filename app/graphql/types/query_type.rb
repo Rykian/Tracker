@@ -29,11 +29,18 @@ module Types
 
     field :torrents, Types::TorrentType.connection_type, null: false do
       description "List of torrents"
-      argument :category_id, Integer, required: false, description: "Filter by category ID"
+      argument :category, Integer, required: false, description: "Filter by main category (includes subcategories)"
+      argument :exact_category, Integer, required: false, description: "Filter by exact category ID"
     end
-    def torrents(category_id: nil)
+    def torrents(category: nil, exact_category: nil)
       torrents = Torrent.includes(:user)
-      torrents = torrents.where(category_id:) unless category_id.nil?
+
+      if exact_category
+        torrents = torrents.where(category_id: exact_category)
+      elsif category
+        torrents = torrents.where(category_id: Category.family_ids_for(category))
+      end
+
       torrents.order(created_at: :desc)
     end
 

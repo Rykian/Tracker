@@ -99,4 +99,10 @@ module Category
   def self.valid_id?(id)
     CATEGORIES.key?(id)
   end
+
+  # Returns the main category and all of its subcategories (e.g., 2000 includes 2010...2080)
+  def self.family_ids_for(category_id)
+    base = category_id.to_i / 1000
+    CATEGORIES.keys.select { |id| id / 1000 == base }
+  end
 end
