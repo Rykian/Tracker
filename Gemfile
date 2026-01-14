@@ -62,5 +62,5 @@ end
 
 group :test do
   # Test helpers and utilities
-  gem "shoulda-matchers", "~> 5.0"
+  gem "shoulda-matchers", "~> 7.0"
 end
