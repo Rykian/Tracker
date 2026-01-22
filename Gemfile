@@ -10,7 +10,7 @@ gem "puma", ">= 5.0"
 # gem "jbuilder"
 
 # GraphQL API [https://graphql-ruby.org/]
-gem "graphql", "~> 2.0"
+gem "graphql", "~> 2.5"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
